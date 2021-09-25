@@ -119,6 +119,10 @@ class PatientStats:
             assert (
                 (time >= format_date1 and header == '（２）①-1\n入院者数')
                 or (time < format_date1 and header.endswith('（２）入院者数（入院確定者数を含む）')))
+        elif coef == '宿泊療養者数':
+            assert (
+                (time >= format_date1 and header == '（３）宿泊\n療養者数')
+                or (time < format_date1 and header.endswith('（３）宿泊療養者数')))
         elif coef == '自宅療養者等数':
             assert (
                 (time >= format_date1 and header == '（４）①-1\n自宅療養者\n等数')
@@ -142,6 +146,7 @@ class PatientStats:
                 '(宿泊療養施設) 確保居室数': 21,
                 '療養者数': 4,
                 '入院者数': 5,
+                '宿泊療養者数': 18,
                 '自宅療養者等数': 23,
                 '療養先調整中の人数': 25,
                 '入院先調整中の人数': 26,
@@ -156,6 +161,7 @@ class PatientStats:
                 '(宿泊療養施設) 確保居室数': 17,
                 '療養者数': 4,
                 '入院者数': 5,
+                '宿泊療養者数': 15,
                 '自宅療養者数': 20,
                 '社会福士施設等療養者数': 21,
                 '療養先調整中の人数': None,
@@ -164,6 +170,22 @@ class PatientStats:
         
         if coef == '入院率':
             a = self._get_stats(sheet, row, '入院者数', time)
+            b = self._get_stats(sheet, row, '療養者数', time)
+            if not isinstance(a, int) or not isinstance(b, int):
+                return None
+            if b == 0:
+                return 0
+            return a / b
+        if coef == '宿泊療養である割合':
+            a = self._get_stats(sheet, row, '宿泊療養者数', time)
+            b = self._get_stats(sheet, row, '療養者数', time)
+            if not isinstance(a, int) or not isinstance(b, int):
+                return None
+            if b == 0:
+                return 0
+            return a / b
+        if coef == '自宅療養である割合':
+            a = self._get_stats(sheet, row, '自宅療養者等数', time)
             b = self._get_stats(sheet, row, '療養者数', time)
             if not isinstance(a, int) or not isinstance(b, int):
                 return None
@@ -224,13 +246,13 @@ class PatientStats:
         return df
         
     def show_bed_usage(self, pref, figsize):
-        coefs = (
+        coefs = [
             '(重症者用でない) 確保病床使用率',
             '(重症者用) 確保病床使用率',
             '(宿泊療養施設) 確保居室使用率',
-        )
+        ]
         df = self._read_data(coefs)
-        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')
+        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')[coefs]
         table.plot(
             figsize=figsize,
             title='ベッドおよび部屋の使用率',
@@ -238,13 +260,13 @@ class PatientStats:
         )
 
     def show_bed_count(self, pref, figsize):
-        coefs = (
+        coefs = [
             '(重症者用でない) 確保病床数',
             '(重症者用) 確保病床数',
             '(宿泊療養施設) 確保居室数',
-        )
+        ]
         df = self._read_data(coefs)
-        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')
+        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')[coefs]
         table.plot(
             figsize=figsize,
             title='ベッドおよび部屋の数',
@@ -252,38 +274,44 @@ class PatientStats:
         )
 
     def show_admission_proportion(self, pref, figsize):
-        coefs = (
+        coefs = [
             '入院率',
+            '宿泊療養である割合',
+            '自宅療養である割合',
             '療養先調整中である割合',
-        )
+        ]
         df = self._read_data(coefs)
-        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')
+        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')[coefs]
         table.plot(
             figsize=figsize,
             legend='top_left',
+            title='患者の療養等先の割合'
         )
 
     def show_type_count_1(self, pref, figsize):
-        coefs = (
+        coefs = [
             '療養者数',
             '入院者数',
+            '宿泊療養者数',
             '自宅療養者等数',
-        )
+            '療養先調整中の人数',
+        ]
         df = self._read_data(coefs)
-        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')
+        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')[coefs]
         table.plot(
             figsize=figsize,
             legend='top_left',
             logy=True,
+            title='療養者数との内訳'
         )
 
     def show_type_count_2(self, pref, figsize):
-        coefs = (
+        coefs = [
             '療養先調整中の人数',
             '入院先調整中の人数',
-        )
+        ]
         df = self._read_data(coefs)
-        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')
+        table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')[coefs]
         table.plot(
             figsize=figsize,
             legend='top_left',
