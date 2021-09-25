@@ -286,7 +286,6 @@ class PatientStats:
         table = df[df.prefecture == pref][['coefficient', 'value']].pivot(columns='coefficient', values='value')
         table.plot(
             figsize=figsize,
-            title='ベッドおよび部屋の数',
             legend='top_left',
             logy=True,
         )
